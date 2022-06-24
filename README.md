@@ -1,6 +1,9 @@
 # Block Blitz
 
-![](./web_assets/screenshot.png)
+|       |  |
+| ----------- | ----------- |
+| ![](./web_assets/screenshot.png)      | ![](./web_assets/block_blitz5.png)       |
+
 
 Block Blitz was a classic old BBC Micro game which was published in Beebug magazine in 1984 and was then a staple in game compilation floppies that got shared around (this was long before the internet made sharing easy). 
 
