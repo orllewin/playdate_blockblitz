@@ -12,9 +12,9 @@ This Playdate remake aims to copy the original precisely in a single main.lua fi
 
 # Source Code and porting
 
-Some badly formatted original source is available on Internet Archive:
+Original source listing in Beebug magazine:
 
-[Elbug_v1_n4_Mar_1984_djvu.txt](https://archive.org/stream/elbug-magazine-1984-03/Elbug_v1_n4_Mar_1984_djvu.txt)
+[BEEBUG_Vol_2_No_8_JAN_FEB_1984.pdf](./web_assets/BEEBUG_Vol_2_No_8_JAN_FEB_1984.pdf)
 
 The game used BBC Micro Mode 5 graphics, 160x256 pixels, and had a 20x32 grid of 8x8 graphics, but the 8x8 graphics had a 2:1 ratio, they weren't square, so for our purposes 16x8.
 
