@@ -1,0 +1,7 @@
+name=Block Blitz
+author=Orllewin
+description=A remake of the old BBC Micro game
+bundleID=orllewin.coracle.playdate.block_blitz
+version=1.0
+buildNumber=1
+imagePath=launch_assets/
