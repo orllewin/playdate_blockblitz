@@ -44,7 +44,7 @@ local rowMaps = {}
 for i=1,30 do
   rowMaps[i] = graphics.tilemap.new()
   rowMaps[i]:setImageTable(imageTable)
-	rowMaps[i]:setTiles({1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, 320)--preset to blank...
+  rowMaps[i]:setTiles({1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, 320)--preset to blank...
 end
 
 function buildLevel()
@@ -100,68 +100,68 @@ function playdate.update()
   if(playdate.buttonIsPressed(playdate.kButtonLeft))then
     playerSprite:setImage(playerLeft)
     if(playerSprite.x > playerMinX)then
-			--check block to left and block to left and above
-			local tileLeft = rowMaps[playerYIndex+2]:getTileAtPosition(playerXIndex, 1)
-			
-			-- brick to left
-			if(tileLeft == 7)then
-				
-				-- but is there a brick above that
-				local tileLeftAbove = rowMaps[playerYIndex+1]:getTileAtPosition(playerXIndex, 1)
-				if(tileLeftAbove == 7)then
-					--can't move
-				else
-					-- move up
-					playerXIndex -= 1
-					playerYIndex -= 1
-				end
-			else
-				-- no brick to left, but how about below
-				local tileLeftBelow = rowMaps[playerYIndex+3]:getTileAtPosition(playerXIndex, 1)
-				if(tileLeftBelow == 7 or tileLeftBelow == 2)then
-					playerXIndex -= 1
-				else
-					local tileLeft2Below = rowMaps[playerYIndex+4]:getTileAtPosition(playerXIndex, 1)
-					if(tileLeft2Below == 1)then
-						--can't move
-					else
-						playerXIndex -= 1
-						playerYIndex += 1
-					end
-				end
-			end		
-			playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
+      --check block to left and block to left and above
+      local tileLeft = rowMaps[playerYIndex+2]:getTileAtPosition(playerXIndex, 1)
+      
+      -- brick to left
+      if(tileLeft == 7)then
+        
+        -- but is there a brick above that
+        local tileLeftAbove = rowMaps[playerYIndex+1]:getTileAtPosition(playerXIndex, 1)
+        if(tileLeftAbove == 7)then
+          --can't move
+        else
+          -- move up
+          playerXIndex -= 1
+          playerYIndex -= 1
+        end
+      else
+        -- no brick to left, but how about below
+        local tileLeftBelow = rowMaps[playerYIndex+3]:getTileAtPosition(playerXIndex, 1)
+        if(tileLeftBelow == 7 or tileLeftBelow == 2)then
+          playerXIndex -= 1
+        else
+          local tileLeft2Below = rowMaps[playerYIndex+4]:getTileAtPosition(playerXIndex, 1)
+          if(tileLeft2Below == 1)then
+            --can't move
+          else
+            playerXIndex -= 1
+            playerYIndex += 1
+          end
+        end
+      end    
+      playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
     end
   elseif(playdate.buttonIsPressed(playdate.kButtonRight))then
-		playerSprite:setImage(playerRight)
-		if(playerSprite.x < playerMaxX)then
-    	--check block to right and block to right and above
-			local tileRight = rowMaps[playerYIndex+2]:getTileAtPosition(playerXIndex + 2, 1)
-			if(tileRight == 7)then
-				local tileRightAbove = rowMaps[playerYIndex+1]:getTileAtPosition(playerXIndex + 2, 1)
-				if(tileRightAbove == 7)then
-					--can't move
-				else
-					playerXIndex += 1
-					playerYIndex -= 1
-				end
-			else
-				-- no brick to left, but how about below
-				local tileRightBelow = rowMaps[playerYIndex+3]:getTileAtPosition(playerXIndex + 2, 1)
-				if(tileRightBelow == 7 or tileRightBelow == 2)then
-					playerXIndex += 1
-				else
-					local tileRight2Below = rowMaps[playerYIndex+4]:getTileAtPosition(playerXIndex + 2, 1)
-					if(tileRight2Below == 1)then
-						--can't move
-					else
-						playerXIndex += 1
-						playerYIndex += 1
-					end
-				end
-			end		
-			playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
-		end
+    playerSprite:setImage(playerRight)
+    if(playerSprite.x < playerMaxX)then
+      --check block to right and block to right and above
+      local tileRight = rowMaps[playerYIndex+2]:getTileAtPosition(playerXIndex + 2, 1)
+      if(tileRight == 7)then
+        local tileRightAbove = rowMaps[playerYIndex+1]:getTileAtPosition(playerXIndex + 2, 1)
+        if(tileRightAbove == 7)then
+          --can't move
+        else
+          playerXIndex += 1
+          playerYIndex -= 1
+        end
+      else
+        -- no brick to left, but how about below
+        local tileRightBelow = rowMaps[playerYIndex+3]:getTileAtPosition(playerXIndex + 2, 1)
+        if(tileRightBelow == 7 or tileRightBelow == 2)then
+          playerXIndex += 1
+        else
+          local tileRight2Below = rowMaps[playerYIndex+4]:getTileAtPosition(playerXIndex + 2, 1)
+          if(tileRight2Below == 1)then
+            --can't move
+          else
+            playerXIndex += 1
+            playerYIndex += 1
+          end
+        end
+      end    
+      playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
+    end
   else
     playerSprite:setImage(playerDefault)
   end
@@ -188,23 +188,23 @@ function playdate.update()
     rowMaps[i]:draw(0, (i-1)*8)
   end
   
-	updateBrick()
+  updateBrick()
   craneMove()
   drawBrickOutlines()
 end
 
 function updateBrick()
-	if(brickFalling)then
-		brickYIndex += 1
-		local tile = rowMaps[brickYIndex]:getTileAtPosition(brickXIndex+1, 1)		
-		if(tile == 1)then
-			fallingBrickSprite:moveTo(brickXIndex * 16, brickYIndex * 8)
-		else
-			local tiles = rowMaps[brickYIndex-1]:setTileAtPosition(brickXIndex + 1, 1, 7)
-			rowMaps[brickYIndex-1]:draw(0, (brickYIndex-2)*8)
-			brickFalling = false
-		end
-	end
+  if(brickFalling)then
+    brickYIndex += 1
+    local tile = rowMaps[brickYIndex]:getTileAtPosition(brickXIndex+1, 1)    
+    if(tile == 1)then
+      fallingBrickSprite:moveTo(brickXIndex * 16, brickYIndex * 8)
+    else
+      local tiles = rowMaps[brickYIndex-1]:setTileAtPosition(brickXIndex + 1, 1, 7)
+      rowMaps[brickYIndex-1]:draw(0, (brickYIndex-2)*8)
+      brickFalling = false
+    end
+  end
 end
 
 function craneMove()
