@@ -16,6 +16,7 @@
 ]] 
 
 local DEBUG = false
+local lives = 3
 local level = 4
 local playerXIndex = 10
 local playerYIndex = 27
@@ -23,13 +24,30 @@ local craneIndex = -1
 local brickXIndex = -1
 local brickYIndex = -1
 
+local PLAYER_HIT_MESSAGE = "B O N K"
+local PRESS_A_TO_CONT = "PRESS A TO CONTINUE"
+
 import "CoreLibs/sprites"
 
 local graphics <const> = playdate.graphics
-
---We're at 10fps to mimic a BBC micro so don't need these optimisations but...
 local fmod <const> = math.fmod
 local random <const> = math.random
+
+local frame = 0
+
+--load font
+local font = graphics.font.new("marble_madness")
+graphics.setFont(font, "normal")
+
+local playerHitMessageX = 160 - (font:getTextWidth(PLAYER_HIT_MESSAGE)/2)
+local playerContinueMessageX = 160 - (font:getTextWidth(PRESS_A_TO_CONT)/2)
+
+playdate.display.setRefreshRate(10)
+playdate.graphics.setBackgroundColor(playdate.graphics.kColorBlack)
+playdate.display.setOffset(40, 0)
+
+local GameStates = {Running = 1, LevelComplete = 2, PlayerHit = 3, LifeLost = 4}
+local gameState = GameStates.Running
 
 -- 1 empty
 -- 2 solid
@@ -41,11 +59,21 @@ local random <const> = math.random
 local imageTable = graphics.imagetable.new("frames")
 
 local rowMaps = {}
-for i=1,30 do
-  rowMaps[i] = graphics.tilemap.new()
-  rowMaps[i]:setImageTable(imageTable)
-  rowMaps[i]:setTiles({1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, 320)--preset to blank...
+
+function resetWorld()
+	rowMaps = {}
+	for i=1,30 do
+  	rowMaps[i] = graphics.tilemap.new()
+  	rowMaps[i]:setImageTable(imageTable)
+  	rowMaps[i]:setTiles({1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, 320)--preset to blank...
+	end
+	
+	rowMaps[1]:setTiles({3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}, 320)--Gantry
+	rowMaps[6]:setTiles({3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3}, 320)--Final/Target Level
+	rowMaps[30]:setTiles({2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}, 320)--Floor
+	
 end
+resetWorld()
 
 function buildLevel()
   for i=29,29-(level-1),-1 do
@@ -58,9 +86,7 @@ function buildLevel()
   rowMaps[29 - level]:setTiles({3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3}, 320)
 end
 
-rowMaps[1]:setTiles({3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3}, 320)--Gantry
-rowMaps[6]:setTiles({3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3}, 320)--Final/Target Level
-rowMaps[30]:setTiles({2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}, 320)--Floor
+
 buildLevel()
 
 local playerDefault = playdate.graphics.image.new("player_default")
@@ -73,10 +99,6 @@ local fallingBrickSprite = playdate.graphics.sprite.new(imageTable:getImage(7))-
 
 local playerMinX = 32
 local playerMaxX = 272
-
-playdate.display.setRefreshRate(10)
-playdate.graphics.setBackgroundColor(playdate.graphics.kColorBlack)
-playdate.display.setOffset(40, 0)
 
 --Crane 
 local CraneStates = {Seeking = 0, Deciding = 1, ExitingLeft = 2, ExitingRight = 3}
@@ -94,107 +116,187 @@ playerSprite:setCenter(0, 0)
 playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
 playerSprite:add()
 
+--Player hit fields
+playerHitRectCount = 0
+playerHitRectTotal = 8
+
 function playdate.update()
   playdate.graphics.clear()
-  
-  if(playdate.buttonIsPressed(playdate.kButtonLeft))then
-    playerSprite:setImage(playerLeft)
-    if(playerSprite.x > playerMinX)then
-      --check block to left and block to left and above
-      local tileLeft = rowMaps[playerYIndex+2]:getTileAtPosition(playerXIndex, 1)
-      
-      -- brick to left
-      if(tileLeft == 7)then
-        
-        -- but is there a brick above that
-        local tileLeftAbove = rowMaps[playerYIndex+1]:getTileAtPosition(playerXIndex, 1)
-        if(tileLeftAbove == 7)then
-          --can't move
-        else
-          -- move up
-          playerXIndex -= 1
-          playerYIndex -= 1
-        end
-      else
-        -- no brick to left, but how about below
-        local tileLeftBelow = rowMaps[playerYIndex+3]:getTileAtPosition(playerXIndex, 1)
-        if(tileLeftBelow == 7 or tileLeftBelow == 2)then
-          playerXIndex -= 1
-        else
-          local tileLeft2Below = rowMaps[playerYIndex+4]:getTileAtPosition(playerXIndex, 1)
-          if(tileLeft2Below == 1)then
-            --can't move
-          else
-            playerXIndex -= 1
-            playerYIndex += 1
-          end
-        end
-      end    
-      playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
-    end
-  elseif(playdate.buttonIsPressed(playdate.kButtonRight))then
-    playerSprite:setImage(playerRight)
-    if(playerSprite.x < playerMaxX)then
-      --check block to right and block to right and above
-      local tileRight = rowMaps[playerYIndex+2]:getTileAtPosition(playerXIndex + 2, 1)
-      if(tileRight == 7)then
-        local tileRightAbove = rowMaps[playerYIndex+1]:getTileAtPosition(playerXIndex + 2, 1)
-        if(tileRightAbove == 7)then
-          --can't move
-        else
-          playerXIndex += 1
-          playerYIndex -= 1
-        end
-      else
-        -- no brick to left, but how about below
-        local tileRightBelow = rowMaps[playerYIndex+3]:getTileAtPosition(playerXIndex + 2, 1)
-        if(tileRightBelow == 7 or tileRightBelow == 2)then
-          playerXIndex += 1
-        else
-          local tileRight2Below = rowMaps[playerYIndex+4]:getTileAtPosition(playerXIndex + 2, 1)
-          if(tileRight2Below == 1)then
-            --can't move
-          else
-            playerXIndex += 1
-            playerYIndex += 1
-          end
-        end
-      end    
-      playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
-    end
-  else
-    playerSprite:setImage(playerDefault)
-  end
-  
-  playdate.graphics.sprite.update()
-    
+	
+	frame += 1
+	
+	if(gameState == GameStates.Running)then
+		graphics.drawText("LIVES" .. lives, -35, 10)
+		if(playdate.buttonIsPressed(playdate.kButtonLeft))then
+			moveLeft()
+		elseif(playdate.buttonIsPressed(playdate.kButtonRight))then
+				moveRight()
+		else
+			playerSprite:setImage(playerDefault)
+		end
+		
+		playdate.graphics.sprite.update()
+		
+		drawWorld()
+		debugDrawGrid()
+		updateBrick()
+		craneMove()
+		drawBrickOutlines()
+	elseif(gameState == GameStates.PlayerHit)then
+		if(fmod(frame, 3) == 0)then
+			if(playdate.display.getInverted())then
+				playdate.display.setInverted(false)
+			else
+				playdate.display.setInverted(true)
+			end
+		end		
+		playerHitStartX = 110
+		playerHitStartY = 95
+		playerHitStartWidth = 100
+		playerHitStartHeight = 50
+		
+		for i=1,playerHitRectCount do
+			graphics.drawRect(playerHitStartX, playerHitStartY, playerHitStartWidth, playerHitStartHeight)
+			playerHitStartX -= 10
+			playerHitStartY -= 10
+			playerHitStartWidth += 20
+			playerHitStartHeight +=20
+		end
+		
+		playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeFillWhite)
+		graphics.drawText(PLAYER_HIT_MESSAGE, playerHitMessageX, 117)
+		if(playerHitRectCount < playerHitRectTotal)then
+			playerHitRectCount += 1
+		else
+			playdate.display.setInverted(false)
+			gameState = GameStates.LifeLost
+		end
+	elseif(gameState == GameStates.LifeLost)then
+		-- graphics.drawLine(0, 0, 320, 240)
+		-- graphics.drawLine(0, 240, 320, 0)
+		graphics.drawText("Oh DEAR", 100, 40)
+		graphics.drawText("YOU LOST", 100, 60)
+		graphics.drawText("A LIFE", 100, 80)
+		graphics.drawText("LIVES " .. lives, 100, 120)
+		graphics.drawText("SCORE " .. 300, 100, 140)
+		graphics.drawText(PRESS_A_TO_CONT, playerContinueMessageX, 180)
+		
+		if(playdate.buttonJustPressed("a"))then
+			--reset everything on screen
+			lives -= 1
+			playerHitRectCount = 0
+			brickFalling = false
+			craneState = CraneStates.Seeking
+			playerXIndex = 10
+			playerYIndex = 27
+			craneIndex = -1
+			brickXIndex = -1
+			brickYIndex = -1
+			resetWorld()
+			buildLevel()
+			playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
+			playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
+			fallingBrickSprite:moveTo(brickXIndex * 16, brickYIndex * 8)
+			gameState = GameStates.Running
+		end
+	end
+end
 
-  if(DEBUG) then
-    graphics.setColor(playdate.graphics.kColorWhite)
-    local y = 0
-    while y < 240 do
-      graphics.drawLine(0, y, 320, y)
-      y = y + 8
-    end
-    
-    local x = 0
-    while x < 320 do
-      graphics.drawLine(x, 0, x, 240)
-      x = x + 16
-    end
-  end
-  
-  for i=1,#rowMaps do
-    rowMaps[i]:draw(0, (i-1)*8)
-  end
-  
-  updateBrick()
-  craneMove()
-  drawBrickOutlines()
+function drawWorld()
+	for i=1,#rowMaps do
+		rowMaps[i]:draw(0, (i-1)*8)
+	end
+end
+
+function moveRight()
+	playerSprite:setImage(playerRight)
+	if(playerSprite.x < playerMaxX)then
+		--check block to right and block to right and above
+		local tileRight = rowMaps[playerYIndex+2]:getTileAtPosition(playerXIndex + 2, 1)
+		if(tileRight == 7)then
+			local tileRightAbove = rowMaps[playerYIndex+1]:getTileAtPosition(playerXIndex + 2, 1)
+			if(tileRightAbove == 7)then
+				--can't move
+			else
+				playerXIndex += 1
+				playerYIndex -= 1
+			end
+		else
+			-- no brick to left, but how about below
+			local tileRightBelow = rowMaps[playerYIndex+3]:getTileAtPosition(playerXIndex + 2, 1)
+			if(tileRightBelow == 7 or tileRightBelow == 2)then
+				playerXIndex += 1
+			else
+				local tileRight2Below = rowMaps[playerYIndex+4]:getTileAtPosition(playerXIndex + 2, 1)
+				if(tileRight2Below == 1)then
+					--can't move
+				else
+					playerXIndex += 1
+					playerYIndex += 1
+				end
+			end
+		end    
+		playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
+	end
+end
+
+function moveLeft()
+	playerSprite:setImage(playerLeft)
+	if(playerSprite.x > playerMinX)then
+		--check block to left and block to left and above
+		local tileLeft = rowMaps[playerYIndex+2]:getTileAtPosition(playerXIndex, 1)
+		
+		-- brick to left
+		if(tileLeft == 7)then
+			
+			-- but is there a brick above that
+			local tileLeftAbove = rowMaps[playerYIndex+1]:getTileAtPosition(playerXIndex, 1)
+			if(tileLeftAbove == 7)then
+				--can't move
+			else
+				-- move up
+				playerXIndex -= 1
+				playerYIndex -= 1
+			end
+		else
+			-- no brick to left, but how about below
+			local tileLeftBelow = rowMaps[playerYIndex+3]:getTileAtPosition(playerXIndex, 1)
+			if(tileLeftBelow == 7 or tileLeftBelow == 2)then
+				playerXIndex -= 1
+			else
+				local tileLeft2Below = rowMaps[playerYIndex+4]:getTileAtPosition(playerXIndex, 1)
+				if(tileLeft2Below == 1)then
+					--can't move
+				else
+					playerXIndex -= 1
+					playerYIndex += 1
+				end
+			end
+		end    
+		playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
+	end
+end
+
+function debugDrawGrid()
+	if(DEBUG) then
+		graphics.setColor(playdate.graphics.kColorWhite)
+		local y = 0
+		while y < 240 do
+			graphics.drawLine(0, y, 320, y)
+			y = y + 8
+		end
+		
+		local x = 0
+		while x < 320 do
+			graphics.drawLine(x, 0, x, 240)
+			x = x + 16
+		end
+	end
 end
 
 function updateBrick()
   if(brickFalling)then
+		-- Move the brick
     brickYIndex += 1
     local tile = rowMaps[brickYIndex]:getTileAtPosition(brickXIndex+1, 1)    
     if(tile == 1)then
@@ -204,6 +306,11 @@ function updateBrick()
       rowMaps[brickYIndex-1]:draw(0, (brickYIndex-2)*8)
       brickFalling = false
     end
+		
+		--check player collision
+		if(brickYIndex == playerYIndex and brickXIndex == playerXIndex)then
+			gameState = GameStates.PlayerHit
+		end
   end
 end
 
