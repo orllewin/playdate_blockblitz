@@ -43,6 +43,7 @@ local rowMaps = {}
 for i=1,30 do
   rowMaps[i] = graphics.tilemap.new()
   rowMaps[i]:setImageTable(imageTable)
+	rowMaps[i]:setTiles({1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, 320)--preset to blank...
 end
 
 function buildLevel()
@@ -133,17 +134,23 @@ function playdate.update()
     rowMaps[i]:draw(0, (i-1)*8)
   end
   
-  if(brickFalling)then
-    brickYIndex += 1
-    fallingBrickSprite:moveTo(brickXIndex * 16, brickYIndex * 16)
-    
-    --todo - this is demo code, need to check floor, and add to tile map for landing row
-    if(brickYIndex >= 20)then
-      brickFalling = false
-    end
-  end
+	updateBrick()
   craneMove()
   drawBrickOutlines()
+end
+
+function updateBrick()
+	if(brickFalling)then
+		brickYIndex += 1
+		local tile = rowMaps[brickYIndex]:getTileAtPosition(brickXIndex+1, 1)		
+		if(tile == 1)then
+			fallingBrickSprite:moveTo(brickXIndex * 16, brickYIndex * 8)
+		else
+			local tiles = rowMaps[brickYIndex-1]:setTileAtPosition(brickXIndex + 1, 1, 2)
+			rowMaps[brickYIndex-1]:draw(0, (brickYIndex-2)*8)
+			brickFalling = false
+		end
+	end
 end
 
 function craneMove()
@@ -166,7 +173,7 @@ function craneMove()
         craneIndex += 1
         craneSprite:moveTo(craneIndex * 16, 8)
         if(random() < 0.25)then
-          dropBrick2(craneIndex)
+          dropBrick(craneIndex)
           craneExit()
         else
           craneState = CraneStates.Seeking
@@ -175,7 +182,7 @@ function craneMove()
         craneIndex -= 1
         craneSprite:moveTo(craneIndex * 16, 8)
         if(random() < 0.25)then
-          dropBrick2(craneIndex)
+          dropBrick(craneIndex)
           craneExit()
         else
           craneState = CraneStates.Seeking
@@ -183,7 +190,7 @@ function craneMove()
       end
     else
       if(brickFalling == false)then
-        dropBrick()
+        dropBrick(craneIndex)
       end
       craneExit()
     end
@@ -204,16 +211,10 @@ function craneMove()
   end
 end
 
-function dropBrick()
-  brickFalling = true
-  brickXIndex = craneIndex
-  brickYIndex = 0
-end
-
-function dropBrick2(index)
+function dropBrick(index)
   brickFalling = true
   brickXIndex = index
-  brickYIndex = 0
+  brickYIndex = 3
 end
 
 function craneExit()
