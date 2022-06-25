@@ -17,13 +17,13 @@
 
 local DEBUG = false
 local level = 4
-local playerIndex = 10
+local playerXIndex = 10
+local playerYIndex = 27
 local craneIndex = -1
 local brickXIndex = -1
 local brickYIndex = -1
 
 import "CoreLibs/sprites"
-
 
 local graphics <const> = playdate.graphics
 
@@ -37,6 +37,7 @@ local random <const> = math.random
 -- 4 full brick
 -- 5 half brick
 -- 6 crane
+-- 7 falling brick
 local imageTable = graphics.imagetable.new("frames")
 
 local rowMaps = {}
@@ -68,7 +69,7 @@ local playerRight = playdate.graphics.image.new("player_right")
 
 local playerSprite = playdate.graphics.sprite.new(playerDefault)
 local craneSprite = playdate.graphics.sprite.new(imageTable:getImage(6))
-local fallingBrickSprite = playdate.graphics.sprite.new(imageTable:getImage(2))--todo - new image
+local fallingBrickSprite = playdate.graphics.sprite.new(imageTable:getImage(7))--todo - new image
 
 local playerMinX = 32
 local playerMaxX = 272
@@ -90,7 +91,7 @@ fallingBrickSprite:moveTo(brickXIndex * 16, brickYIndex * 16)
 fallingBrickSprite:add()
 
 playerSprite:setCenter(0, 0)
-playerSprite:moveTo(playerIndex * 16, 216)
+playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
 playerSprite:add()
 
 function playdate.update()
@@ -99,15 +100,68 @@ function playdate.update()
   if(playdate.buttonIsPressed(playdate.kButtonLeft))then
     playerSprite:setImage(playerLeft)
     if(playerSprite.x > playerMinX)then
-      playerIndex -= 1
-      playerSprite:moveTo(playerIndex * 16, playerSprite.y)
+			--check block to left and block to left and above
+			local tileLeft = rowMaps[playerYIndex+2]:getTileAtPosition(playerXIndex, 1)
+			
+			-- brick to left
+			if(tileLeft == 7)then
+				
+				-- but is there a brick above that
+				local tileLeftAbove = rowMaps[playerYIndex+1]:getTileAtPosition(playerXIndex, 1)
+				if(tileLeftAbove == 7)then
+					--can't move
+				else
+					-- move up
+					playerXIndex -= 1
+					playerYIndex -= 1
+				end
+			else
+				-- no brick to left, but how about below
+				local tileLeftBelow = rowMaps[playerYIndex+3]:getTileAtPosition(playerXIndex, 1)
+				if(tileLeftBelow == 7 or tileLeftBelow == 2)then
+					playerXIndex -= 1
+				else
+					local tileLeft2Below = rowMaps[playerYIndex+4]:getTileAtPosition(playerXIndex, 1)
+					if(tileLeft2Below == 1)then
+						--can't move
+					else
+						playerXIndex -= 1
+						playerYIndex += 1
+					end
+				end
+			end		
+			playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
     end
   elseif(playdate.buttonIsPressed(playdate.kButtonRight))then
-    playerSprite:setImage(playerRight)
-    if(playerSprite.x < playerMaxX)then
-      playerIndex += 1
-      playerSprite:moveTo(playerIndex * 16, playerSprite.y)
-    end
+		playerSprite:setImage(playerRight)
+		if(playerSprite.x < playerMaxX)then
+    	--check block to right and block to right and above
+			local tileRight = rowMaps[playerYIndex+2]:getTileAtPosition(playerXIndex + 2, 1)
+			if(tileRight == 7)then
+				local tileRightAbove = rowMaps[playerYIndex+1]:getTileAtPosition(playerXIndex + 2, 1)
+				if(tileRightAbove == 7)then
+					--can't move
+				else
+					playerXIndex += 1
+					playerYIndex -= 1
+				end
+			else
+				-- no brick to left, but how about below
+				local tileRightBelow = rowMaps[playerYIndex+3]:getTileAtPosition(playerXIndex + 2, 1)
+				if(tileRightBelow == 7 or tileRightBelow == 2)then
+					playerXIndex += 1
+				else
+					local tileRight2Below = rowMaps[playerYIndex+4]:getTileAtPosition(playerXIndex + 2, 1)
+					if(tileRight2Below == 1)then
+						--can't move
+					else
+						playerXIndex += 1
+						playerYIndex += 1
+					end
+				end
+			end		
+			playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
+		end
   else
     playerSprite:setImage(playerDefault)
   end
@@ -146,7 +200,7 @@ function updateBrick()
 		if(tile == 1)then
 			fallingBrickSprite:moveTo(brickXIndex * 16, brickYIndex * 8)
 		else
-			local tiles = rowMaps[brickYIndex-1]:setTileAtPosition(brickXIndex + 1, 1, 2)
+			local tiles = rowMaps[brickYIndex-1]:setTileAtPosition(brickXIndex + 1, 1, 7)
 			rowMaps[brickYIndex-1]:draw(0, (brickYIndex-2)*8)
 			brickFalling = false
 		end
@@ -155,10 +209,10 @@ end
 
 function craneMove()
   if(craneState == CraneStates.Seeking)then
-    if(craneIndex == playerIndex)then
+    if(craneIndex == playerXIndex)then
       --Above player, drop or shuffle position
       craneState = CraneStates.Deciding
-    elseif(craneIndex < playerIndex)then
+    elseif(craneIndex < playerXIndex)then
       --to left of player, move right
       craneIndex += 1
       craneSprite:moveTo(craneIndex * 16, 8)
