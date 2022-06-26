@@ -17,12 +17,22 @@
 
 local DEBUG = false
 local lives = 3
-local level = 4
+local level = 1
+local levelScore = 800
 local playerXIndex = 10
 local playerYIndex = 27
+local platformExtendXIndex = -1
+
 local craneIndex = -1
 local brickXIndex = -1
 local brickYIndex = -1
+
+local Directions = {left = 0, right = 1}
+local platformExtending = false
+local platformExtendDirection = Directions.left
+local yipeeElapsed = 0
+local yippeeX = -1
+local yippeeY = -1
 
 local PLAYER_HIT_MESSAGE = "B O N K"
 local PRESS_A_TO_CONT = "PRESS A TO CONTINUE"
@@ -42,11 +52,11 @@ graphics.setFont(font, "normal")
 local playerHitMessageX = 160 - (font:getTextWidth(PLAYER_HIT_MESSAGE)/2)
 local playerContinueMessageX = 160 - (font:getTextWidth(PRESS_A_TO_CONT)/2)
 
-playdate.display.setRefreshRate(10)
+playdate.display.setRefreshRate(20)
 playdate.graphics.setBackgroundColor(playdate.graphics.kColorBlack)
 playdate.display.setOffset(40, 0)
 
-local GameStates = {Running = 1, LevelComplete = 2, PlayerHit = 3, LifeLost = 4}
+local GameStates = {Running = 1, LevelComplete = 2, PlayerHit = 3, LifeLost = 4, ShowNext = 5}
 local gameState = GameStates.Running
 
 -- 1 empty
@@ -92,6 +102,7 @@ buildLevel()
 local playerDefault = playdate.graphics.image.new("player_default")
 local playerLeft = playdate.graphics.image.new("player_left")
 local playerRight = playdate.graphics.image.new("player_right")
+local playerYippee = playdate.graphics.image.new("player_default_yippee")
 
 local playerSprite = playdate.graphics.sprite.new(playerDefault)
 local craneSprite = playdate.graphics.sprite.new(imageTable:getImage(6))
@@ -126,11 +137,10 @@ function playdate.update()
 	frame += 1
 	
 	if(gameState == GameStates.Running)then
-		graphics.drawText("LIVES" .. lives, -35, 10)
 		if(playdate.buttonIsPressed(playdate.kButtonLeft))then
 			moveLeft()
 		elseif(playdate.buttonIsPressed(playdate.kButtonRight))then
-				moveRight()
+			moveRight()
 		else
 			playerSprite:setImage(playerDefault)
 		end
@@ -142,6 +152,7 @@ function playdate.update()
 		updateBrick()
 		craneMove()
 		drawBrickOutlines()
+		checkPlayerHeight()
 	elseif(gameState == GameStates.PlayerHit)then
 		if(fmod(frame, 3) == 0)then
 			if(playdate.display.getInverted())then
@@ -177,27 +188,90 @@ function playdate.update()
 		graphics.drawText("Oh DEAR", 100, 40)
 		graphics.drawText("YOU LOST", 100, 60)
 		graphics.drawText("A LIFE", 100, 80)
+		graphics.drawText("LIVES " .. (lives - 1), 100, 120)
+		graphics.drawText("SCORE " .. 300, 100, 140)
+		graphics.drawText(PRESS_A_TO_CONT, playerContinueMessageX, 180)
+		
+		if(playdate.buttonJustPressed("a"))then
+			lives -= 1
+			resetScreen()
+		end
+	elseif(gameState == GameStates.LevelComplete)then
+		graphics.drawLine(0, 0, 100, 200)
+		
+		playdate.graphics.sprite.update()
+		drawWorld()
+		drawBrickOutlines()
+		if(fmod(frame, 4) == 0)then
+			if(platformExtendDirection == Directions.right)then
+				--draw platform in from right
+				if(platformExtending and platformExtendXIndex > playerXIndex+1)then
+					platformExtendXIndex -= 1
+					rowMaps[29-level]:setTileAtPosition(platformExtendXIndex, 1, 3)
+				else
+					platformExtending = false
+					--move player
+					if(playerXIndex < 18)then
+						playerXIndex += 1
+						playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
+					else
+						--show yippee animation
+						showYipee()
+					end
+				end
+			else
+				--draw platform out from left
+				if(platformExtending and platformExtendXIndex <= playerXIndex)then
+					platformExtendXIndex += 1
+					rowMaps[29-level]:setTileAtPosition(platformExtendXIndex, 1, 3)
+				else
+					platformExtending = false
+					--move player
+					if(playerXIndex > 1)then
+						playerXIndex -= 1
+						playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
+					else
+						--show yippee animation
+						showYipee()
+					end
+				end
+			end
+		end
+	elseif(gameState == GameStates.ShowNext)then
+		--todo
+		graphics.drawText("NEXT", 100, 40)
+		graphics.drawText("CAVERN NUMBER " .. level, 100, 60)
 		graphics.drawText("LIVES " .. lives, 100, 120)
 		graphics.drawText("SCORE " .. 300, 100, 140)
 		graphics.drawText(PRESS_A_TO_CONT, playerContinueMessageX, 180)
 		
 		if(playdate.buttonJustPressed("a"))then
-			--reset everything on screen
-			lives -= 1
-			playerHitRectCount = 0
-			brickFalling = false
-			craneState = CraneStates.Seeking
-			playerXIndex = 10
-			playerYIndex = 27
-			craneIndex = -1
-			brickXIndex = -1
-			brickYIndex = -1
-			resetWorld()
-			buildLevel()
-			playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
+			resetScreen()
+		end
+	end
+end
+
+function showYipee()
+	playdate.graphics.setImageDrawMode("fillWhite")
+	graphics.drawText("YIPPEE", yippeeX, yippeeY)
+	playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
+	if(fmod(frame, 4) == 0)then
+		yipeeElapsed += 1
+		
+		if(playerSprite:getImage() == playerDefault)then
+			playerYIndex += 1
+			playerSprite:setImage(playerYippee)
 			playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
-			fallingBrickSprite:moveTo(brickXIndex * 16, brickYIndex * 8)
-			gameState = GameStates.Running
+		else
+			playerYIndex -= 1
+			playerSprite:setImage(playerDefault)
+			playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
+		end
+		
+		if(yipeeElapsed >= 12)then
+			playdate.graphics.setImageDrawMode("fillWhite")
+			level += 1
+			gameState = GameStates.ShowNext
 		end
 	end
 end
@@ -386,8 +460,51 @@ function craneExit()
   end
 end
 
+function resetScreen()
+	--reset everything on screen
+	playerHitRectCount = 0
+	brickFalling = false
+	craneState = CraneStates.Seeking
+	playerXIndex = 10
+	playerYIndex = 27
+	craneIndex = -1
+	brickXIndex = -1
+	brickYIndex = -1
+	levelScore = 800
+	resetWorld()
+	buildLevel()
+	playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
+	playerSprite:moveTo(playerXIndex * 16, playerYIndex * 8)
+	fallingBrickSprite:moveTo(brickXIndex * 16, brickYIndex * 8)
+	gameState = GameStates.Running
+end
+
 function drawBrickOutlines()
   graphics.setColor(playdate.graphics.kColorWhite)
   graphics.drawRect(0, 232 - (level * 8), 32, (level * 8))
   graphics.drawRect(288, 232 - (level * 8), 32, (level * 8))
+end
+
+function checkPlayerHeight()
+	if(playerYIndex == 30 - (level+4))then
+		if(playerXIndex >= 10)then
+			platformExtendDirection = Directions.right
+			platformExtendXIndex = 19
+		else
+			platformExtendDirection = Directions.left
+			platformExtendXIndex = 2
+		end
+		yipeeElapsed = 0
+		if(playerXIndex >= 10)then
+			yippeeX = 230
+		else
+			yippeeX = 30
+		end
+		
+		yippeeY = (playerYIndex * 8) - 20
+		
+	
+		platformExtending = true
+		gameState = GameStates.LevelComplete
+	end
 end
