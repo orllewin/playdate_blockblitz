@@ -19,6 +19,7 @@ local DEBUG = false
 local lives = 3
 local level = 1
 local levelScore = 800
+local playerScore = 0
 local playerXIndex = 10
 local playerYIndex = 27
 local platformExtendXIndex = -1
@@ -52,7 +53,7 @@ graphics.setFont(font, "normal")
 local playerHitMessageX = 160 - (font:getTextWidth(PLAYER_HIT_MESSAGE)/2)
 local playerContinueMessageX = 160 - (font:getTextWidth(PRESS_A_TO_CONT)/2)
 
-playdate.display.setRefreshRate(20)
+playdate.display.setRefreshRate(15)
 playdate.graphics.setBackgroundColor(playdate.graphics.kColorBlack)
 playdate.display.setOffset(40, 0)
 
@@ -106,7 +107,7 @@ local playerYippee = playdate.graphics.image.new("player_default_yippee")
 
 local playerSprite = playdate.graphics.sprite.new(playerDefault)
 local craneSprite = playdate.graphics.sprite.new(imageTable:getImage(6))
-local fallingBrickSprite = playdate.graphics.sprite.new(imageTable:getImage(7))--todo - new image
+local fallingBrickSprite = playdate.graphics.sprite.new(imageTable:getImage(7))
 
 local playerMinX = 32
 local playerMaxX = 272
@@ -189,7 +190,7 @@ function playdate.update()
 		graphics.drawText("YOU LOST", 100, 60)
 		graphics.drawText("A LIFE", 100, 80)
 		graphics.drawText("LIVES " .. (lives - 1), 100, 120)
-		graphics.drawText("SCORE " .. 300, 100, 140)
+		graphics.drawText("SCORE " .. playerScore, 100, 140)
 		graphics.drawText(PRESS_A_TO_CONT, playerContinueMessageX, 180)
 		
 		if(playdate.buttonJustPressed("a"))then
@@ -242,7 +243,7 @@ function playdate.update()
 		graphics.drawText("NEXT", 100, 40)
 		graphics.drawText("CAVERN NUMBER " .. level, 100, 60)
 		graphics.drawText("LIVES " .. lives, 100, 120)
-		graphics.drawText("SCORE " .. 300, 100, 140)
+		graphics.drawText("SCORE " .. playerScore, 100, 140)
 		graphics.drawText(PRESS_A_TO_CONT, playerContinueMessageX, 180)
 		
 		if(playdate.buttonJustPressed("a"))then
@@ -271,6 +272,8 @@ function showYipee()
 		if(yipeeElapsed >= 12)then
 			playdate.graphics.setImageDrawMode("fillWhite")
 			level += 1
+			playerScore += levelScore
+			levelScore = (level - 3) * 800
 			gameState = GameStates.ShowNext
 		end
 	end
@@ -379,6 +382,7 @@ function updateBrick()
       local tiles = rowMaps[brickYIndex-1]:setTileAtPosition(brickXIndex + 1, 1, 7)
       rowMaps[brickYIndex-1]:draw(0, (brickYIndex-2)*8)
       brickFalling = false
+			levelScore -= 10
     end
 		
 		--check player collision
@@ -390,6 +394,12 @@ end
 
 function craneMove()
   if(craneState == CraneStates.Seeking)then
+		if(brickFalling)then
+			craneSprite:moveTo(-20, -20)
+			return
+		else
+			
+		end
     if(craneIndex == playerXIndex)then
       --Above player, drop or shuffle position
       craneState = CraneStates.Deciding
