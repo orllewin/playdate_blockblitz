@@ -11,7 +11,8 @@
   Height:
   If we stick to 8 pixel high cells we end up with 30 rows, which is perfect, same as the original
   
-  Note. I've deliberately hacked this together in a single file, it's not meant to be well written.
+  Note. I've hacked this together in a single file, 
+	it's not meant to be well written, just in case that's not obvious
   
 ]] 
 
@@ -57,7 +58,7 @@ playdate.display.setRefreshRate(15)
 playdate.graphics.setBackgroundColor(playdate.graphics.kColorBlack)
 playdate.display.setOffset(40, 0)
 
-local GameStates = {Running = 1, LevelComplete = 2, PlayerHit = 3, LifeLost = 4, ShowNext = 5}
+local GameStates = {Running = 1, LevelComplete = 2, PlayerHit = 3, LifeLost = 4, ShowNext = 5, GameOver = 6}
 local gameState = GameStates.Running
 
 -- 1 empty
@@ -181,7 +182,12 @@ function playdate.update()
 			playerHitRectCount += 1
 		else
 			playdate.display.setInverted(false)
-			gameState = GameStates.LifeLost
+			
+			if(lives > 1)then
+				gameState = GameStates.LifeLost
+			else
+				gameState = GameStates.GameOver
+			end
 		end
 	elseif(gameState == GameStates.LifeLost)then
 		-- graphics.drawLine(0, 0, 320, 240)
@@ -195,6 +201,21 @@ function playdate.update()
 		
 		if(playdate.buttonJustPressed("a"))then
 			lives -= 1
+			resetScreen()
+		end
+	elseif(gameState == GameStates.GameOver)then
+		-- graphics.drawLine(0, 0, 320, 240)
+		-- graphics.drawLine(0, 240, 320, 0)
+		graphics.drawText("GAME OVER", 100, 40)
+		graphics.drawText("YOU RAN OUT ", 100, 60)
+		graphics.drawText("OF LIVES", 100, 80)
+		graphics.drawText("LIVES 0", 100, 120)
+		graphics.drawText("SCORE " .. playerScore, 100, 140)
+		graphics.drawText(PRESS_A_TO_CONT, playerContinueMessageX, 180)
+		
+		if(playdate.buttonJustPressed("a"))then
+			lives = 3
+			level = 4
 			resetScreen()
 		end
 	elseif(gameState == GameStates.LevelComplete)then
