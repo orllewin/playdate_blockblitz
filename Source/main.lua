@@ -17,8 +17,9 @@
 ]] 
 
 local DEBUG = false
+local GAME_SPEED = 12
 local lives = 3
-local level = 1
+local level = 4
 local levelScore = 800
 local playerScore = 0
 local playerXIndex = 10
@@ -54,7 +55,7 @@ graphics.setFont(font, "normal")
 local playerHitMessageX = 160 - (font:getTextWidth(PLAYER_HIT_MESSAGE)/2)
 local playerContinueMessageX = 160 - (font:getTextWidth(PRESS_A_TO_CONT)/2)
 
-playdate.display.setRefreshRate(15)
+playdate.display.setRefreshRate(GAME_SPEED)
 playdate.graphics.setBackgroundColor(playdate.graphics.kColorBlack)
 playdate.display.setOffset(40, 0)
 
@@ -133,6 +134,13 @@ playerSprite:add()
 playerHitRectCount = 0
 playerHitRectTotal = 8
 
+--audio
+local craneMoveSound = playdate.sound.sampleplayer.new("sound/move")
+local playerHitSound = playdate.sound.sampleplayer.new("sound/hit")
+local fallingSynth = playdate.sound.synth.new(playdate.sound.kWaveSine)
+local lfo = playdate.sound.lfo.new(playdate.sound.kLFOSine)
+assert(craneMoveSound)
+
 function playdate.update()
   playdate.graphics.clear()
 	
@@ -192,7 +200,7 @@ function playdate.update()
 	elseif(gameState == GameStates.LifeLost)then
 		-- graphics.drawLine(0, 0, 320, 240)
 		-- graphics.drawLine(0, 240, 320, 0)
-		graphics.drawText("Oh DEAR", 100, 40)
+		graphics.drawText("OH DEAR", 100, 40)
 		graphics.drawText("YOU LOST", 100, 60)
 		graphics.drawText("A LIFE", 100, 80)
 		graphics.drawText("LIVES " .. (lives - 1), 100, 120)
@@ -403,12 +411,15 @@ function updateBrick()
       local tiles = rowMaps[brickYIndex-1]:setTileAtPosition(brickXIndex + 1, 1, 7)
       rowMaps[brickYIndex-1]:draw(0, (brickYIndex-2)*8)
       brickFalling = false
+			stopFallingSound()
 			levelScore -= 10
     end
 		
 		--check player collision
 		if(brickYIndex == playerYIndex and brickXIndex == playerXIndex)then
 			gameState = GameStates.PlayerHit
+			stopFallingSound()
+			playerHitSound:play(1)
 		end
   end
 end
@@ -417,9 +428,7 @@ function craneMove()
   if(craneState == CraneStates.Seeking)then
 		if(brickFalling)then
 			craneSprite:moveTo(-20, -20)
-			return
-		else
-			
+			return	
 		end
     if(craneIndex == playerXIndex)then
       --Above player, drop or shuffle position
@@ -428,10 +437,12 @@ function craneMove()
       --to left of player, move right
       craneIndex += 1
       craneSprite:moveTo(craneIndex * 16, 8)
+			craneMoveSound:play(1)
     else
       --to right of player, move left
       craneIndex -= 1
       craneSprite:moveTo(craneIndex * 16, 8)
+			craneMoveSound:play(1)
     end
   elseif(craneState == CraneStates.Deciding)then
     if(random() < 0.25)then
@@ -481,6 +492,7 @@ function dropBrick(index)
   brickFalling = true
   brickXIndex = index
   brickYIndex = 3
+	playFallingSound()
 end
 
 function craneExit()
@@ -538,4 +550,16 @@ function checkPlayerHeight()
 		platformExtending = true
 		gameState = GameStates.LevelComplete
 	end
+end
+
+function playFallingSound()
+	fallingSynth:setVolume(0.4)
+	fallingSynth:playNote(800)
+	lfo:setType(playdate.sound.kLFOSawtoothUp)
+	lfo:setRate(0.5)
+	fallingSynth:setFrequencyMod(lfo)
+end
+
+function stopFallingSound()
+	fallingSynth:stop()
 end
