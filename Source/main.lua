@@ -36,6 +36,7 @@ local platformExtendDirection = Directions.left
 local yipeeElapsed = 0
 local yippeeX = -1
 local yippeeY = -1
+local yippeeSampleTriggered = false
 
 local PLAYER_HIT_MESSAGE = "B O N K"
 local PRESS_A_TO_CONT = "PRESS A TO CONTINUE"
@@ -137,7 +138,9 @@ playerHitRectTotal = 8
 --audio
 local craneMoveSound = playdate.sound.sampleplayer.new("sound/move")
 local playerHitSound = playdate.sound.sampleplayer.new("sound/hit")
-local fallingSynth = playdate.sound.synth.new(playdate.sound.kWaveSine)
+local brickHitGroudSound = playdate.sound.sampleplayer.new("sound/hit_ground")
+local levelCompleteSound = playdate.sound.sampleplayer.new("sound/level_complete")
+local fallingSynth = playdate.sound.synth.new(playdate.sound.kLFOSine)
 local lfo = playdate.sound.lfo.new(playdate.sound.kLFOSine)
 assert(craneMoveSound)
 
@@ -282,6 +285,10 @@ function playdate.update()
 end
 
 function showYipee()
+	if(yippeeSampleTriggered == false)then
+		yippeeSampleTriggered = true
+		levelCompleteSound:play(1)
+	end
 	playdate.graphics.setImageDrawMode("fillWhite")
 	graphics.drawText("YIPPEE", yippeeX, yippeeY)
 	playdate.graphics.setImageDrawMode(playdate.graphics.kDrawModeCopy)
@@ -304,6 +311,8 @@ function showYipee()
 			playerScore += levelScore
 			levelScore = (level - 3) * 800
 			gameState = GameStates.ShowNext
+			levelCompleteSound:stop()
+			yippeeSampleTriggered = false
 		end
 	end
 end
@@ -412,6 +421,7 @@ function updateBrick()
       rowMaps[brickYIndex-1]:draw(0, (brickYIndex-2)*8)
       brickFalling = false
 			stopFallingSound()
+			brickHitGroudSound:play()
 			levelScore -= 10
     end
 		
@@ -553,11 +563,14 @@ function checkPlayerHeight()
 end
 
 function playFallingSound()
-	fallingSynth:setVolume(0.4)
-	fallingSynth:playNote(800)
-	lfo:setType(playdate.sound.kLFOSawtoothUp)
-	lfo:setRate(0.5)
-	fallingSynth:setFrequencyMod(lfo)
+	local skip = true
+	if(skip == false)then
+		fallingSynth:setVolume(0.4)
+		fallingSynth:playNote(650)
+		lfo:setPhase(0)
+		lfo:setRate(0.25)
+		fallingSynth:setFrequencyMod(lfo)
+	end
 end
 
 function stopFallingSound()
