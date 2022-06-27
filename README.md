@@ -7,10 +7,11 @@
 
 Block Blitz was a classic old BBC Micro game which was published in Beebug magazine in 1984 and was then a staple in game compilation floppies that got shared around (this was long before the internet made sharing easy). 
 
-This [Playdate](https://play.date/) remake aims to copy the original precisely in a single main.lua file.
+This [Playdate](https://play.date/) remake aims to copy the original precisely in a single hacked together main.lua file.
 
-# Online Playable Version
+# Browser Playable Version
 
+Running in an emulator, though I'm sure it runs slower on hardware:
 [Block Blitz](http://bbcmicro.co.uk//jsbeeb/play.php?autoboot&disc=http://bbcmicro.co.uk//gameimg/discs/1226/Disc069-BlockBlitz.ssd&noseek)
 
 # Source Code and porting
