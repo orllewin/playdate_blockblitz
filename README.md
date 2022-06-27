@@ -13,7 +13,7 @@ This [Playdate](https://play.date/) remake aims to copy the original precisely i
 
 Download the zipped .pdx below to sideload onto your Playdate:
 
-<a href="Block_Blitz.pdx.zip"><img style="width:25%;height:auto;" src="web_assets/Playdate-badge-download.png"></a>
+<a href="https://github.com/orllewin/playdate_blockblitz/blob/main/Block_Blitz.pdx.zip?raw=true"><img style="width:25%;height:auto;" src="web_assets/Playdate-badge-download.png"></a>
 
 # Browser Playable Version
 
