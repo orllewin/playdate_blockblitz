@@ -21,6 +21,7 @@
 local DEBUG = false
 local GAME_SPEED = 12
 local TEXT_LEFT = 30
+local MAX_LEVEL = 24
 local lives = 3
 local level = 4
 local levelScore = 800
@@ -42,8 +43,11 @@ local yippeeY = -1
 local yippeeSampleTriggered = false
 
 local PLAYER_HIT_MESSAGE = "BONK"
-local PRESS_A_TO_CONT = "PRESS A"
-
+local PRESS_A_TO_CONT = "A TO CONTINUE"
+local GAME_COMPLETED_TEXT_A = "CONGRATULATIONS"
+local GAME_COMPLETED_TEXT_B = "YOU HAVE ESCAPED"
+local GAME_COMPLETED_TEXT_C = "FROM ALL THE"
+local GAME_COMPLETED_TEXT_D = "CAVERNS"
 import "CoreLibs/sprites"
 
 local graphics <const> = playdate.graphics
@@ -63,7 +67,7 @@ playdate.display.setRefreshRate(GAME_SPEED)
 playdate.graphics.setBackgroundColor(playdate.graphics.kColorBlack)
 playdate.display.setOffset(40, 0)
 
-local GameStates = {Running = 1, LevelComplete = 2, PlayerHit = 3, LifeLost = 4, ShowNext = 5, GameOver = 6}
+local GameStates = {Running = 1, LevelComplete = 2, PlayerHit = 3, LifeLost = 4, ShowNext = 5, GameOver = 6, GameComplete = 7}
 local gameState = GameStates.Running
 
 -- 1 empty
@@ -204,9 +208,19 @@ function playdate.update()
 				gameState = GameStates.GameOver
 			end
 		end
+	elseif(gameState == GameStates.GameComplete)then
+		graphics.drawText(GAME_COMPLETED_TEXT_A, TEXT_LEFT, 40)
+		graphics.drawText(GAME_COMPLETED_TEXT_B, TEXT_LEFT, 60)
+		graphics.drawText(GAME_COMPLETED_TEXT_C, TEXT_LEFT, 80)
+		graphics.drawText(GAME_COMPLETED_TEXT_D, TEXT_LEFT, 100)
+		graphics.drawText(PRESS_A_TO_CONT, playerContinueMessageX, 180)
+		
+		if(playdate.buttonJustPressed("a"))then
+			lives = 3
+			level = 4
+			resetScreen()
+		end
 	elseif(gameState == GameStates.LifeLost)then
-		-- graphics.drawLine(0, 0, 320, 240)
-		-- graphics.drawLine(0, 240, 320, 0)
 		graphics.drawText("OH DEAR", TEXT_LEFT, 40)
 		graphics.drawText("YOU LOST", TEXT_LEFT, 60)
 		graphics.drawText("A LIFE", TEXT_LEFT, 80)
@@ -314,9 +328,15 @@ function showYipee()
 			level += 1
 			playerScore += levelScore
 			levelScore = (level - 3) * 800
-			gameState = GameStates.ShowNext
+			
 			levelCompleteSound:stop()
 			yippeeSampleTriggered = false
+			
+			if(level < MAX_LEVEL)then
+				gameState = GameStates.ShowNext
+			else
+				gameState = GameStates.GameComplete
+			end
 		end
 	end
 end
@@ -562,6 +582,7 @@ function checkPlayerHeight()
 		
 	
 		platformExtending = true
+		
 		gameState = GameStates.LevelComplete
 	end
 end
