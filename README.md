@@ -1,6 +1,6 @@
 # Block Blitz
 
-|       |  |
+| BBC Micro|Playdate|
 | ----------- | ----------- |
 | ![](./web_assets/screenshot.png)      | ![](./web_assets/block_blitz5.png)       |
 
