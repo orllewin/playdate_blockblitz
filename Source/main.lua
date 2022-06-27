@@ -13,11 +13,14 @@
   
   Note. I've hacked this together in a single file, 
 	it's not meant to be well written, just in case that's not obvious
+	
+  Final level is 23 - todo end sequence if player gets there...
   
 ]] 
 
 local DEBUG = false
 local GAME_SPEED = 12
+local TEXT_LEFT = 30
 local lives = 3
 local level = 4
 local levelScore = 800
@@ -38,8 +41,8 @@ local yippeeX = -1
 local yippeeY = -1
 local yippeeSampleTriggered = false
 
-local PLAYER_HIT_MESSAGE = "B O N K"
-local PRESS_A_TO_CONT = "PRESS A TO CONTINUE"
+local PLAYER_HIT_MESSAGE = "BONK"
+local PRESS_A_TO_CONT = "PRESS A"
 
 import "CoreLibs/sprites"
 
@@ -50,7 +53,7 @@ local random <const> = math.random
 local frame = 0
 
 --load font
-local font = graphics.font.new("marble_madness")
+local font = graphics.font.new("font_bbc_mode_5")
 graphics.setFont(font, "normal")
 
 local playerHitMessageX = 160 - (font:getTextWidth(PLAYER_HIT_MESSAGE)/2)
@@ -204,11 +207,11 @@ function playdate.update()
 	elseif(gameState == GameStates.LifeLost)then
 		-- graphics.drawLine(0, 0, 320, 240)
 		-- graphics.drawLine(0, 240, 320, 0)
-		graphics.drawText("OH DEAR", 100, 40)
-		graphics.drawText("YOU LOST", 100, 60)
-		graphics.drawText("A LIFE", 100, 80)
-		graphics.drawText("LIVES " .. (lives - 1), 100, 120)
-		graphics.drawText("SCORE " .. playerScore, 100, 140)
+		graphics.drawText("OH DEAR", TEXT_LEFT, 40)
+		graphics.drawText("YOU LOST", TEXT_LEFT, 60)
+		graphics.drawText("A LIFE", TEXT_LEFT, 80)
+		graphics.drawText("LIVES " .. (lives - 1), TEXT_LEFT, 120)
+		graphics.drawText("SCORE " .. playerScore, TEXT_LEFT, 140)
 		graphics.drawText(PRESS_A_TO_CONT, playerContinueMessageX, 180)
 		
 		if(playdate.buttonJustPressed("a"))then
@@ -218,11 +221,11 @@ function playdate.update()
 	elseif(gameState == GameStates.GameOver)then
 		-- graphics.drawLine(0, 0, 320, 240)
 		-- graphics.drawLine(0, 240, 320, 0)
-		graphics.drawText("GAME OVER", 100, 40)
-		graphics.drawText("YOU RAN OUT ", 100, 60)
-		graphics.drawText("OF LIVES", 100, 80)
-		graphics.drawText("LIVES 0", 100, 120)
-		graphics.drawText("SCORE " .. playerScore, 100, 140)
+		graphics.drawText("GAME OVER", TEXT_LEFT, 40)
+		graphics.drawText("YOU RAN OUT ", TEXT_LEFT, 60)
+		graphics.drawText("OF LIVES", TEXT_LEFT, 80)
+		graphics.drawText("LIVES 0", TEXT_LEFT, 120)
+		graphics.drawText("SCORE " .. playerScore, TEXT_LEFT, 140)
 		graphics.drawText(PRESS_A_TO_CONT, playerContinueMessageX, 180)
 		
 		if(playdate.buttonJustPressed("a"))then
@@ -273,10 +276,10 @@ function playdate.update()
 		end
 	elseif(gameState == GameStates.ShowNext)then
 		--todo
-		graphics.drawText("NEXT", 100, 40)
-		graphics.drawText("CAVERN NUMBER " .. level, 100, 60)
-		graphics.drawText("LIVES " .. lives, 100, 120)
-		graphics.drawText("SCORE " .. playerScore, 100, 140)
+		graphics.drawText("NEXT", TEXT_LEFT, 40)
+		graphics.drawText("CAVERN NUMBER " .. level, TEXT_LEFT, 60)
+		graphics.drawText("LIVES " .. lives, TEXT_LEFT, 120)
+		graphics.drawText("SCORE " .. playerScore, TEXT_LEFT, 140)
 		graphics.drawText(PRESS_A_TO_CONT, playerContinueMessageX, 180)
 		
 		if(playdate.buttonJustPressed("a"))then
