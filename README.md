@@ -9,6 +9,12 @@ Block Blitz was a classic old BBC Micro game which was published in Beebug magaz
 
 This [Playdate](https://play.date/) remake aims to copy the original precisely in a [single hacked together main.lua file](https://github.com/orllewin/playdate_blockblitz/blob/main/Source/main.lua).
 
+# Playdate Download
+
+Download the zipped .pdx below to sideload onto your Playdate:
+
+<a href="Block_Blitz.pdx.zip"><img style="width:25%;height:auto;" src="web_assets/Playdate-badge-download.png"></a>
+
 # Browser Playable Version
 
 Running in an emulator, though I'm sure it runs slower on hardware:
