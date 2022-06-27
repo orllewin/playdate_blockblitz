@@ -138,6 +138,7 @@ playerHitRectTotal = 8
 --audio
 local craneMoveSound = playdate.sound.sampleplayer.new("sound/move")
 local playerHitSound = playdate.sound.sampleplayer.new("sound/hit")
+local fallingSound = playdate.sound.sampleplayer.new("sound/falling_brick")
 local brickHitGroudSound = playdate.sound.sampleplayer.new("sound/hit_ground")
 local levelCompleteSound = playdate.sound.sampleplayer.new("sound/level_complete")
 local fallingSynth = playdate.sound.synth.new(playdate.sound.kLFOSine)
@@ -563,16 +564,12 @@ function checkPlayerHeight()
 end
 
 function playFallingSound()
-	local skip = true
+	local skip = false
 	if(skip == false)then
-		fallingSynth:setVolume(0.4)
-		fallingSynth:playNote(650)
-		lfo:setPhase(0)
-		lfo:setRate(0.25)
-		fallingSynth:setFrequencyMod(lfo)
+		fallingSound:play()
 	end
 end
 
 function stopFallingSound()
-	fallingSynth:stop()
+	fallingSound:stop()
 end
