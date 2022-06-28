@@ -11,7 +11,7 @@ This [Playdate](https://play.date/) remake aims to copy the original precisely i
 
 # Playdate Download
 
-Download the zipped .pdx below to sideload onto your Playdate:
+Download the zipped .pdx below to sideload onto your Playdate, or get it from [itch.io and give me some money](https://orllewin.itch.io/block-blitz):
 
 <a href="https://github.com/orllewin/playdate_blockblitz/blob/main/Block_Blitz.pdx.zip?raw=true"><img style="width:25%;height:auto;" src="web_assets/Playdate-badge-download.png"></a>
 
